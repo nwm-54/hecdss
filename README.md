@@ -17,7 +17,7 @@ For full details about this project, please visit [poster](https://drive.google.
   Screening and replacing missing values/ erroneous value with interpolation 
   ![Alt](/demo_imgs/results.png "Screening and replacing missing values/ erroneous value with interpolation")
   ## Users Guide
-  More details about the program provided (here)[https://drive.google.com/file/d/1br-OarxMH9SZmHyPylpeuDwZzXV_zHi8/view?usp=sharing]
+  More details about the program provided [here](https://drive.google.com/file/d/1br-OarxMH9SZmHyPylpeuDwZzXV_zHi8/view?usp=sharing)
   
   
   
