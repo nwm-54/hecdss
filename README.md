@@ -1,4 +1,4 @@
-# DASHBOARD SCREENING AND REPLACING PROGRAM FOR HECDSS DATABASE 
+# SCREENING AND REPLACING DASHBOARD
 
 ## Set up  
   1. Download [HECDSS-Vue 3.2.3](https://www.hec.usace.army.mil/software/hec-dssvue/downloads.aspx)
