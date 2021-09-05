@@ -8,9 +8,9 @@
       git clone https://github.com/nwm-54/hecdss
       ```
   c. Open *grasslands.dss* in HECDSS-Vue. Go to **Tools -> Script Editor** to import .py file. Click *Save and Test* to run the script<br />
- 2. Demo 
-  ![Alt](/dashboard.png "Dashboard interface to interact with database")<br />
-  ![Alt](/results.png "Screening and replacing missing values/ erroneous value with interpolation")
+ 2. Demo <br\>
+  ![Alt](/demo_imgs/dashboard.png "Dashboard interface to interact with database")<br />
+  ![Alt](/demo_imgs/results.png "Screening and replacing missing values/ erroneous value with interpolation")
   
   
   
