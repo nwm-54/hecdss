@@ -8,7 +8,7 @@ For full details about this project, please visit [poster](https://drive.google.
       git clone https://github.com/nwm-54/hecdss
       ```
   3. Open *grasslands.dss* in HECDSS-Vue.
-  4. Go to **Tools -> Script Editor** to import dashboard_paramC_copyfromA.py file. Click *Save and Test* to run the script
+  4. Go to **Tools -> Script Editor** to import dashboard.py file. Click *Save and Test* to run the script
  ## Demo
   Dashboard interface to interact with database <br />
   ![](/demo_imgs/dashboard.png "Dashboard interface to interact with database")
