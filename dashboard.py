@@ -27,7 +27,6 @@ from hec.script import Tabulate
 from javax.swing.table import DefaultTableModel, DefaultTableCellRenderer
 from java.text import DecimalFormat
 from javax.swing.border import EtchedBorder
-#import javax.swing.JScrollPane;  
 
 defaultScreenValue_CONST  = {'PH':[6.0,9.0,'pH'],'SPCOND':[150.0, 5000.0, 'uS/m'], 'CONDUCTIVITY':[150.0, 5000.0, 'uS/m'],'DEPTH':[0.0,500.0, 'ft'],'TURBIDITY':[0.0,100.0,'NTU'],'TEMP':[4.44,37.38,'C'],'DO':[1.0,15.0,'mg/L']}
 minValue_CONST = -9999.0#0.0
@@ -216,7 +215,6 @@ class DataTableDisplay():
 		self.stationName = stationName
 		self.paramName = paramName
 		self.param, self.cPart, self.time, self.fPart =getColumnFromBranchName(self.paramName) 
-#		self.param, self.cPart, self.time, self.fPart =getColumnFromBranchName2(self.paramName) 
 
 		self.missingIndex = []
 		self.rejectedIndex = []
@@ -250,12 +248,6 @@ class DataTableDisplay():
 		new_quality = []
 		for i in range(len(org_quality)):
 			val = org_quality[i]
-#			if self.rejectedBool[i]:
-#				val = set_quality_bit(val,1)
-##				val = set_quality_bit(val,8)
-##				val = set_quality_bit(val,9)
-#				val = clear_quality_bit(val, 3)
-#				val = clear_quality_bit(val, 5)
 			if self.rejectedBool[i]: 
 				val = set_quality_bit(val, 5)
 			elif not self.missingBool[i]:
@@ -266,7 +258,6 @@ class DataTableDisplay():
 		dssFile = HecDss.open(self.fileName)
 		modifiedTsc = self.modifiedTscm.getData().clone()
 		modifiedTsc.quality = self.makeQuality(modifiedTsc.quality)
-#		modifiedTsc.fullName =  "/%s/%s/%s//%s/%s/" % (self.cPart, self.stationName, self.param, self.time, self.fPart)
 		modifiedTsc.fullName =  "/%s/%s/%s//%s/%s/" % (self.param, self.stationName, self.cPart,self.time, self.fPart)
 		print(modifiedTsc.fullName)
 		dssFile.put(modifiedTsc)
@@ -282,11 +273,9 @@ class DataTableDisplay():
 		dssFile = HecDss.open(self.fileName)
 		toSaveTscm, _ = self.removeRejected()
 		modifiedTsc = toSaveTscm.getData().clone()
-#		modifiedTsc.fullName =  "/%s/%s/%s//%s/%s/" % (self.cPart, self.stationName, self.param, self.time, self.fPart+'- MODIFIED')
 		cur_timestamp = int(time.time())
 		modifiedTsc.fullName =  "/%s/%s/%s//%s/%s/" % (self.param, self.stationName, self.cPart,self.time, self.fPart+' MODIFIED ' + str(cur_timestamp))
 		pathname = modifiedTsc.fullName
-#		modifiedTsc.quality = self.makeQuality(modifiedTsc.quality) #skip making quality due to adding timestamps
 
 		print(modifiedTsc.fullName)
 		dssFile.put(modifiedTsc)
@@ -297,8 +286,6 @@ class DataTableDisplay():
 		stationName = self.stationName
 		paramName = getPathnameColumn(pathname,'a') + '/'+getPathnameColumn(pathname,'c')+'/' +  getPathnameColumn(pathname,'e') +'/' +  getPathnameColumn(pathname,'f') 
 
-#		print('saveCopy: stationName ', stationName)
-#		print('saveCopy: paramName ', paramName)
 		return stationName, paramName
 		
 	def isMissing(self, value):
@@ -318,13 +305,10 @@ class DataTableDisplay():
 		mergedTscm = None
 		i = 0
 		first_tscm = True
-#		print('from merging tscm station ', self.stationName)
-#		print('from merging tscm param  ', self.paramName)
+
 		while i<len(allPathname):
 			if self.stationName==getPathnameColumn(allPathname[i], 'b')  and self.param==getPathnameColumn(allPathname[i], 'a')  and self.time==getPathnameColumn(allPathname[i], 'e') and self.cPart==getPathnameColumn(allPathname[i],'c')  and self.fPart==getPathnameColumn(allPathname[i],'f') :
-#			if self.stationName==getPathnameColumn(allPathname[i], 'b')  and self.param==getPathnameColumn(allPathname[i], 'c')  and self.time==getPathnameColumn(allPathname[i], 'e') and self.cPart==getPathnameColumn(allPathname[i],'a')  and self.fPart==getPathnameColumn(allPathname[i],'f') :
-#				tsc =   dssFile.read(allPathname[i]).getData()
-#				mergeTscQuality.extend(self.collectTscQuality(tsc))
+
 				if first_tscm:
 					mergedTscm = dssFile.read(allPathname[i])
 					orgInterval = mergedTscm.getData().interval
@@ -380,7 +364,6 @@ class DataTableDisplay():
 
 		while i<len(self.replaceIndex): 
 			timeWindow.append(self.replaceIndex[i])
-#			print('open replace timeWindow', self.replaceIndex[i])
 			j=i
 			while j<len(self.replaceIndex)-1 and self.replaceIndex[j+1]-self.replaceIndex[j]==1:
 				j+=1
@@ -392,7 +375,6 @@ class DataTableDisplay():
 		for i in range(0, len(timeWindow), 2):
 			startIndex, endIndex =timeWindow[i],timeWindow[ i+1]
 			fromValue, toValue = self.findPrevValidValue(startIndex), self.findNextValidValue(endIndex)
-			print('interpolate from', fromValue, 'to', toValue)
 			increment = (toValue-fromValue)/(endIndex-startIndex+2)
 			currentValue = fromValue+increment
 			for j in range(startIndex, endIndex+1):
@@ -420,9 +402,7 @@ class DataTableDisplay():
 			if newTsc.values[i] != missingNumericValue_CONST :
 				sumValues += newTsc.values[i]
 				count += 1
-#			elif i not in self.replaceIndex:
-#				hectime = HecTime()
-#				hectime.set(newTsc.times[i])
+
 		if count == 0:
 			return None
 		return  sumValues/count
@@ -439,32 +419,17 @@ class DataTableDisplay():
 		
 	def getReplaceIndex(self):
 		return self.replaceIndex
-#	def screenTscmHelper(self, index, startIdx, endIdx,pointsSpan):
-#		preValidIndex = []
-#		while index >startIdx and pointsSpan>0:
-#			if self.missingBool[index] or self.rejectedBool[index]:
-#				index-=1
-#			else:
-##				value = self.modifiedTscm.getData().values[index]
-#				pointsSpan -=1
-#				preValid.append(index)
-#				index  -=1
-##		while pointsSpan>0:
-##			preValid.append( -5) #MARK FOR INDEX OF AVAERAGE VALUE
-##			pointsSpan -=1
-#		return preValidIndex
+
 
 	def avgValid(self, startIdx, endIdx):
 		tsc = self.modifiedTscm.getData().values
-#		indexTsc = list(range(len(tsc)))
 		total, cnt=0,0
 		for i in range(startIdx, endIdx):
 			if not self.rejectedBool[i] and not self.missingBool[i]:
 				total += tsc[i]
 				cnt +=1
 		return total/cnt
-#		cond = lambda i: 0 if i<startIdx or i>=endIdx or self.missingBool[index] or self.rejectedBool[index] else tsc[i]
-#		validValues = map(cond, indexTsc)
+
 	def removeRejected(self, timeIdx=None,  customValue = missingNumericValue_CONST ): #based on replaceCustomValue
 		newTsc = self.modifiedTscm.getData().clone()
 		cnt = 0
@@ -507,15 +472,12 @@ class DataTableDisplay():
 				total = ( sum(avg_window[1:])+tsc[i] )/ pointsSpan
 				if total == 0.0:
 					total += 1e-10
-#				print('PREV TOTAL', prev_total)
 				if func(prev_total, total)>changeLimit:
-#					print(i+1, 'got rejected ' , tsc[i],'prev_total ', prev_total, ' --rate of change ',abs(total - prev_total)/prev_total )
 					self.rejectedBool[i] = True
 					self.rejectedIndex.append(i)
 				else:
 					prev_total = total
 				
-#		return self.removeRejected(timeIdx)#self.modifiedTscm, self.rejectedIndex
 		return self.modifiedTscm, self.rejectedIndex
 		
 	def getRejectedIndex(self):
@@ -523,9 +485,7 @@ class DataTableDisplay():
 		
 	def getMissingIndex(self):
 		return self.missingIndex
-#	def getValidIndex(self):
-#		list(filter(lambda i: self.rejectedBool[i] and self.missingBool[i]))
-		
+
 	def fillMergedTscm(self,  tscm, orgInterval, fillValue= -9999999.99): #mergeTscQuality
 		tsc = tscm.getData()
 		hectime = HecTime()
@@ -557,7 +517,6 @@ class DataTableDisplay():
 		for i, value in enumerate(tscm.getData().values):
 			if  dummyTsc.values[i] ==missingNumericValue_CONST:
 				self.missingIndex.append(i)
-#				self.missingBool
 				self.missingBool[i] = True
 
 		tscm.setData(dummyTsc)
@@ -656,7 +615,6 @@ class MainFrame_revised():
 			stationPane.add(stationBottomPane)
 			displayName = paramName + ' - ' + stationName
 			parentTabbedPane.addTab(displayName, stationPane)
-#			parentTabbedPane.addTab('Replace', scroll)
 
 			tabLabel = JPanel()
 			tabLabel.add(JLabel(displayName ))
@@ -676,48 +634,10 @@ class MainFrame_revised():
 		self.stationDict[stationName][paramName]['display'] = False
 		
 	def addReplaceTab(self, parentTabbedPane, stationName, paramName):
-#		replaceScrollPane = JScrollPane()
 		replacePane = JPanel()
-#		JScrollPane scrollableTextArea = new JScrollPane(textArea);  
-#		scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);  
-#		scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);  
-  
-#        frame.getContentPane().add(scrollableTextArea);  
+
 		replacePane.setLayout(BoxLayout(replacePane, BoxLayout.Y_AXIS))
 		c = GridBagConstraints()		
-
-		#add time window option
-#		replaceTopPanel = JPanel()
-#		replaceTopPanel.setLayout( GridBagLayout() )
-#		replaceTopPanel.setBorder( BorderFactory.createTitledBorder("Time Window") )
-#		startOrdinate_DEFAULT= 1
-#		endOrdinate_DEFAULT = self.stationDict[stationName][paramName]['numValues']
-#		c.gridx, c.gridy= 0, 0 #x,y
-#		start_time_label = JLabel('Start Ordinate: ')
-#		replaceTopPanel.add(start_time_label, c)
-#		c.gridx, c.gridy= 1, 0 #x,y
-#		start_time_model = SpinnerNumberModel(startOrdinate_DEFAULT,startOrdinate_DEFAULT ,endOrdinate_DEFAULT-1,1) #default value as 0 ordinate
-#		start_time_spinner = JSpinner(start_time_model)
-#		replaceTopPanel.add(start_time_spinner, c)
-#		c.gridx, c.gridy= 2, 0 #x,y
-#		end_time_label = JLabel('  End Ordinate: ')
-#		replaceTopPanel.add(end_time_label, c)
-#		c.gridx, c.gridy= 3, 0 #x,y
-#		end_time_model = SpinnerNumberModel(endOrdinate_DEFAULT,startOrdinate_DEFAULT +1,endOrdinate_DEFAULT+1,1) #default value as end ordinate
-#		end_time_spinner = JSpinner(end_time_model)
-#		replaceTopPanel.add(end_time_spinner, c)
-#		self.stationDict[stationName][paramName]['timeWindowReplaceSpinner'] = [start_time_spinner, end_time_spinner]
-
-		
-#		replaceMidPanel = JPanel()
-#		replaceMidPanel.setLayout( GridBagLayout() )
-#		replaceMidPanel.setBorder( BorderFactory.createTitledBorder("Replace flag") )
-#		missingReplaceButton = JCheckBox("M(missing)")
-#		c.gridx, c.gridy= 0, 0
-#		replaceMidPanel.add(missingReplaceButton,c)
-#		rejectReplaceButton = JCheckBox("R(rejected)")
-#		c.gridx, c.gridy= 1, 0
-#		replaceMidPanel.add(rejectReplaceButton,c)
 
 		#merge flag and method into one panel
 		c.anchor =  GridBagConstraints.WEST 
@@ -787,23 +707,18 @@ class MainFrame_revised():
 		computeReplaceButton = JButton("Compute", actionPerformed = self.onComputeReplace, alignmentX = Component.CENTER_ALIGNMENT)
 		self.stationDict[stationName][paramName]['computeReplaceButton'] = computeReplaceButton
 
-#		replacePane.add(replaceTopPanel)
-#		replacePane.add(replaceMidPanel)
 		replacePane.add(replaceBottomPanel)
 		replacePane.add(computeReplaceButton)
 
 		scroll = JScrollPane()
 		scroll.setViewportView(replacePane)
 		parentTabbedPane.addTab('Replace', scroll)
-#		parentTabbedPane.addTab('Replace', replacePane)
 		
 	def onReplaceMethod(self, event):
-#		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent()#RadioButton->replaceBottomPanel->replacePane->stationTopPane->StationInfoPane
-#		stationPane = event.getSource().getParent().getParent().getParent().getParent()
 
 		#Add scroll pane
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent().getParent().getParent()#RadioButton->replaceBottomPanel->replacePane->stationTopPane->StationInfoPane
-#		
+
 		stationPane = event.getSource().getParent().getParent().getParent().getParent().getParent().getParent()
 		print(stationInfoPane)
 		print(stationPane)
@@ -837,8 +752,6 @@ class MainFrame_revised():
 		print('replaceMethodselected save here ', stationName, paramName, replace_method)
 		
 	def onComputeReplace(self, event):
-#		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent()#RadioButton->replaceBottomPanel->replacePane->stationTopPane->StationInfoPane
-#		stationPane = event.getSource().getParent().getParent().getParent()
 
 		#Add scroll pane
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent().getParent()#RadioButton->replaceBottomPanel->replacePane->stationTopPane->StationInfoPane
@@ -846,7 +759,6 @@ class MainFrame_revised():
 		stationName, paramName = getStationParamName(stationInfoPane, stationPane)
 		print('on ComputeReplace ', stationName, '   ', paramName)
 		param, cPart, time, fPart = getColumnFromBranchName(paramName)  #paramName.split('/')
-#		param, cPart, time, fPart = getColumnFromBranchName2(paramName)  #paramName.split('/')
 
 		missingReplaceButton, rejectReplaceButton = self.stationDict[stationName][paramName]['replaceFlagOptions']
 		replaceFlag = replaceFlagSelected(missingReplaceButton, rejectReplaceButton) 
@@ -873,13 +785,9 @@ class MainFrame_revised():
 			self.stationDict[stationName][paramName]['modifiledTscm'] = screenTscm
 			
 			myTable = self.stationDict[stationName][paramName]['myTable']
-#			myTable.addData( screenTscm.getData())
+
 			myTable.addData('Replace', screenTscm.getData(), replaceCell=replaceIndex)
 			self.updateReportTextField(stationName, paramName)
-
-				##### DO NOT UNCOMMENT
-#				myTable = self.displayColumn(myTable, 'Screen', 3,  self.stationDict[stationName][paramName]['rejectedIndex'],  Color(205,0,0))
-#				myTable = self.displayColumn(myTable, 'Replace', 4,  self.stationDict[stationName][paramName]['replaceIndex'], Color(0,205,0))
 
 			self.stationDict[stationName][paramName]['myTable'] = myTable
 		else: 
@@ -902,11 +810,9 @@ class MainFrame_revised():
 		tscm = orgDataTable.getMergedTscm()
 		
 		self.tableTopPane = JPanel()
-#		myTable = Tabulate.newTable()
 		numDecimal = self.getNumDecimal(paramName)
 		myTable = MyCustomTable(numDecimal)
 		myTable.addData('Original', tscm.getData())
-#		myTable = self.displayOriginalColumn( myTable, 2)
 		table = myTable.getTable()
 		self.tableTopPane.add(JScrollPane(table)) 
 
@@ -947,7 +853,6 @@ class MainFrame_revised():
 		tablePane.add(tableMidPane)
 		tablePane.add( tableBottomPane)
 		parentPane.add(tablePane)
-#		parentPane.add(JScrollPane(tablePane))
 		self.stationDict[stationName][paramName]['reportTextField'] = [missingTextField, rejectedTextField, replaceTextField] 
 		self.stationDict[stationName][paramName]['plotComboBox'] = plotComboBox 
 		self.stationDict[stationName][paramName]['myTable'] = myTable 
@@ -967,12 +872,10 @@ class MainFrame_revised():
 		self.stationDict[stationName][paramName]['computeReplaceButton' ].setEnabled(True)
 		self.stationDict[stationName][paramName]['computeScreenButton' ].setEnabled(True)
 
-#		myTable = Tabulate.newTable()
 		numDecimal = self.getNumDecimal(paramName)
 		myTable = MyCustomTable(numDecimal)
 		tscm = self.stationDict[stationName][paramName]['orgDataTable'].getMergedTscm()
 		myTable.addData('Original', tscm.getData())
-#		myTable = self.displayOriginalColumn( myTable, 2)
 		table = myTable.getTable()
 		self.tableTopPane.removeAll()
 		self.tableTopPane.add(JScrollPane(table)) 
@@ -1017,7 +920,6 @@ class MainFrame_revised():
 		if self.stationDict[stationName][paramName].has_key('modifiledTscm'):
 			tscToPlot, _ = self.stationDict[stationName][paramName]['orgDataTable'].removeRejected()
 			tscToPlot = tscToPlot.getData()
-#			tscToPlot = self.stationDict[stationName][paramName]['modifiledTscm'].getData()
 		plot.addData(tscToPlot)
 
 		selectedPlot = self.stationDict[stationName][paramName]['plotComboBox'].selectedIndex
@@ -1236,13 +1138,6 @@ class MainFrame_revised():
 
 		print('column count', myTable.getTable().getColumnCount() )
 
-				###### DO NOT UNCOMMENT
-#			myTable = self.displayColumn(myTable, 'Replace', 3,  self.stationDict[stationName][paramName]['replaceIndex'],  Color(0,205,0))
-#			myTable = self.displayColumn(myTable, 'Screen', 4,  self.stationDict[stationName][paramName]['rejectedIndex'], Color(205,0,0))
-
-#			self.stationDict[stationName][paramName]['myTable'] = myTable
-		
-#		myTable = self.displayColumn(myTable, 'Screen', 3, rejectedIndex,  Color(205,0,0))
 		self.stationDict[stationName][paramName]['myTable'] = myTable
 		self.updateReportTextField(stationName, paramName)
 		
@@ -1285,7 +1180,6 @@ def getStationDict(fileName):
 	stationName = set()
 	for pathname in dssFile.getPathnameList():
 		if 'DISCRETE' not in pathname and 'IR-' not in pathname:
-#			print(pathname)
 			stationName.add(getPathnameColumn(pathname,'b'))
 	stationDict = {}
 	for sname in stationName:
@@ -1324,18 +1218,6 @@ def getAllParamNameByStation(fileName, stationName):
 	dssFile.close()
 	return paramName
 
-#def isPathnamExist(fileName, fullName):
-#	dssFile = HecDss.open(fileName)
-#	
-#	for pathname in dssFile.getPathnameList():
-#		if fullName == pathname:
-#			fpart = getPathnameColumn(pathname,'f')
-#			if fpart == '':
-#				fpart = 'MODIFIED 1'
-#			else:
-#				num = fpart.split(' ')[-1]
-#	dssFile.close()
-#	return 
 '''
 MAIN FUNCTION
 '''
