@@ -11,8 +11,10 @@ For full details about this project, please visit [poster](https://drive.google.
   4. Go to **Tools -> Script Editor** to import dashboard.py file. Click *Save and Test* to run the script
  ## Demo
   Dashboard interface to interact with database <br />
-  ![](/demo_imgs/dashboard.png "Dashboard interface to interact with database")
-  
+<!--   ![](/demo_imgs/dashboard.png "Dashboard interface to interact with database") -->
+![](/ref replace.png)
+![](/ref screen.png)
+
   
   Screening and replacing missing values/ erroneous value with interpolation 
   ![](/demo_imgs/results.png "Screening and replacing missing values/ erroneous value with interpolation")
