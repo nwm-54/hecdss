@@ -105,7 +105,7 @@ Functions that are not included in this table are created to help with code read
 
 
 
-[^1]: To view the data of each pathname, follow -> Raw Data
-[^2]: Reject datapoints are not deleted but are marked with value of -3.4028234663852886e+38. Datapoint with this values are not displayed and used in calculation
+[^1]: To view the data of each pathname, select pathname -> Display -> Raw Data...
+[^2]: Reject datapoints are not deleted but are marked with value of -3.4028234663852886e+38. Datapoints with this values are neither displayed nor use in calculation
   
 
