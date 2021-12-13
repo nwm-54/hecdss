@@ -46,7 +46,7 @@ Functions that are not included in this table are created to help with code read
 | HeaderRenderer | getTableCellRendererComponent | D | overwrites default functions from Swing library - customize the header in **(1)** |
 | ColorRenderer | getTableCellRendererComponent | D | overwrites default functions from Swing library - customize the background cell in **(1)** |
 | FreezeTableModel | isCellEditable | D | cells in **(1)** are not interactive |
-| MyCustomTable | addData | I | create **(1)** |
+| MyCustomTable | addData | I | create table **(1)** |
 | DataTableDisplay | removeEmptyPath | I | removes empty pathname or pathname with error data or else the HECDSS-Vue program could not display data properly - **make sure to call this function after saving pathname to .dss file** |
 | | makeQuality | T | marks data points as rejected or replaced for table display |
 | | overwrite | I | replaces the original data with the modification data |
@@ -65,11 +65,11 @@ Functions that are not included in this table are created to help with code read
 | | resetDatatable| T | undos the temporary changes -  called when user clicks **Reset** |
 | MainFrame_revised | makeStationTree | D | generates the pane **(2)** |
 | | updateTree | D | rerenders pane **(2)** when new pathname is added |
-| | makeStationInfoPane | D | creates station tab **(3)** |
+| | makeStationInfoPane | D | creates tab for each pathname **(3)** |
 | | addReplaceTab | D | generates replace tab **(4)** |
 | | onReplaceMethod | D | collects input regarding user's choice of replace method |
 | | onComputeReplace | D | handles the computation when user clicks **Compute** on replacing tab |
-| | addTablePane | D | generates the table pane **(5)** |
+| | addTablePane | D | generates the table pane - including **(1)**, **(5)**, and the bottom buttons |
 | | updateReportTextField | D | updates **(6)** |
 | | onReset | D | handles the event of user clicking **Reset** | 
 | | onOverwrite | D | handles the event of user clicking **Overwrite** |
@@ -77,13 +77,13 @@ Functions that are not included in this table are created to help with code read
 | | onPlotParam | D | handles the event of user clicking **Plot** | 
 | | onTypeChangeLimit | D | collects user's choice of Change Limit "Percentage" or "AvgDiff" |
 | | addScreenConditions | D | adds screening conditions | 
-| | addScreenTab | D | generates screening tab **(6)** | 
+| | addScreenTab | D | generates screening tab **(5)** | 
 | | onCheckBoxConditions | D | collects user's choice of screening condition |
 | | displayOriginalColumn | D | display original column in table **(1)** | 
 | | displayColumn | D | display column in table **(1)** |
 | | onComputeScreen | D | handles the event of user clicking **Compute** on screening tab | 
-| | getScreenSpinnerValue | D | collects number values from box ..... |
-| | getTimeWindowSpinnerValue | D | collects number values from box ..... |
+| | getScreenSpinnerValue | D | collects number values from box **(7)**|
+| | getTimeWindowSpinnerValue | D | collects number values from box **(8)**|
 | | run | D | displays the dashboard |
 
 
