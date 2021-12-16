@@ -48,7 +48,8 @@ HELPER FUNCTIONS
 '''
 #def setAsRejected(value):
 #	return value | (1<< (rejectedQualityIndex-1))
-	
+
+#The following two function set the quality flag for data's quality. More about quality flag: https://www.hec.usace.army.mil/confluence/dssvuedocs/latest/scripting-dssvue/working-with-datacontainers
 def set_quality_bit(value, quality_index):
 	bit = quality_index-1
     	return value | (1<<bit)
@@ -56,19 +57,24 @@ def set_quality_bit(value, quality_index):
 def clear_quality_bit(value, quality_index):
 	bit = quality_index-1
    	return value & ~(1<<bit)
-    
+
+#This function takes in a list of pathnames from a file and return a list of continuous pathnames
 def get_param_name(pathnames, stationName):
 	param_name_list = set()
 	for name in pathnames:
 		if stationName in name and 'DISCRETE' not in name:
 			param_name_list.add(DSSPathname(name).aPart())
 	return param_name_list
+
+#This funciton get parameter name from the station info pane tab
 def getStationParamName(parent, child):
 	index = parent.indexOfComponent(child)
 	tabTitle = parent.getTitleAt(index)
 	paramName = tabTitle.split('-')[0].strip()
 	stationName =  tabTitle.split('-')[-1].strip()
 	return stationName, paramName
+
+#This function checks the types of replace value: missing or reject
 def replaceFlagSelected(missingReplaceButton, rejectReplaceButton):
 	res = ''
 	if missingReplaceButton.isSelected():
@@ -76,13 +82,19 @@ def replaceFlagSelected(missingReplaceButton, rejectReplaceButton):
 	if rejectReplaceButton.isSelected():
 		res += 'R'
 	return res
+
+#This function gets the default value for the spinner input
 def getDefaultScreenValue(paramName):
 	for key in defaultScreenValue_CONST.keys():
 		if key in paramName:
 			return defaultScreenValue_CONST[key][0],  defaultScreenValue_CONST[key][1],  defaultScreenValue_CONST[key][1]- defaultScreenValue_CONST[key][0], defaultScreenValue_CONST[key][2]
 	return minValue_CONST,maxValue_CONST,stepValue_CONST, ''
+
+#This function prints a message to user
 def messageDialog(msg):
 	JOptionPane.showMessageDialog(None, msg, "Alert Title", JOptionPane.ERROR_MESSAGE)
+	
+#This functions helps to parse time
 def numToStringInterval(number):
 			if number<60:
 				return str(number)+'MIN'
@@ -90,16 +102,83 @@ def numToStringInterval(number):
 				return str(number/60)+'HOUR'
 			else:
 				return str(number/60/24)+'DAY'
+			
+#This function split the pathname into sections according to parameter
 def getColumnFromBranchName(branchName):
 	a, c, e, f = branchName.split('/')
 	return a.strip(),c.strip(),e.strip(),f.strip()
-def getColumnFromBranchName2(branchName):
-	a, c, e, f = branchName.split('/')
-	return c.strip(),a.strip(),e.strip(),f.strip()
+#This function shows the confirm dialog to user
 def confirmDialog(msg):
 	JOptionPane.showMessageDialog(None, msg)
+	
+def hasTimeWindow(windowTime):
+	return windowTime[0].toString() != ''
+
+#This function get the specified part of a pathname
+def getPathnameColumn(pathname, column):
+	if column =='c': #switch here a to c, c to a
+		return DSSPathname(pathname).aPart()
+	elif column =='b':
+		return DSSPathname(pathname).bPart()
+	elif column =='a': #switch here a to c, c to a
+		return DSSPathname(pathname).cPart()
+	elif column =='d':
+		return DSSPathname(pathname).dPart()
+	elif column =='e':
+		return DSSPathname(pathname).ePart()
+	else:
+		return DSSPathname(pathname).fPart()
+	
+#This function generates a dictionary of all pathname along with its metadata
+def getStationDict(fileName):
+	dssFile = HecDss.open(fileName)
+	stationName = set()
+	for pathname in dssFile.getPathnameList():
+		if 'DISCRETE' not in pathname and 'IR-' not in pathname:
+			stationName.add(getPathnameColumn(pathname,'b'))
+	stationDict = {}
+	for sname in stationName:
+		print('making station dict',sname)
+		paramsName = getAllParamNameByStation(fileName, sname)
+		stationDict[sname] = {}
+		stationDict[sname]['paramNameList'] = paramsName
+		
+		for pname in paramsName:
+			print('making station dict param',pname)
+			stationDict[sname][pname] = {}
+			stationDict[sname][pname]['display'] = False
+			dataTable = DataTableDisplay(fileName, sname, pname)
+			stationDict[sname][pname]['orgDataTable'] = dataTable 
+			stationDict[sname][pname]['numValues'] = dataTable.numValues
+			stationDict[sname][pname]['missingIndex'] = dataTable.getMissingIndex()
+	dssFile.close()
+	print('done making station dict')
+	return stationDict
+
+#This function updates values for the station dictionary
+def updateStationDict(fileName,  stationDict, sname, pname):
+	stationDict[sname][pname] = {}
+	stationDict[sname][pname]['display'] = False
+	dataTable = DataTableDisplay(fileName, sname, pname)
+	stationDict[sname][pname]['orgDataTable'] = dataTable 
+	stationDict[sname][pname]['numValues'] = dataTable.numValues
+	stationDict[sname][pname]['missingIndex'] = dataTable.getMissingIndex()
+	return stationDict
+
+#This functions gets all pathnames of a station.	
+def getAllParamNameByStation(fileName, stationName):
+	dssFile = HecDss.open(fileName)
+	paramName = set()
+	for pathname in dssFile.getPathnameList():
+		if getPathnameColumn(pathname,'b') == stationName and 'DISCRETE' not in pathname and 'IR-' not in pathname:
+			newParam = getPathnameColumn(pathname,'a') + '/'+getPathnameColumn(pathname,'c')+'/' +  getPathnameColumn(pathname,'e') +'/' +  getPathnameColumn(pathname,'f') 
+			paramName.add(newParam)
+	dssFile.close()
+	return paramName
+
+	
 '''
-GUI CLASSES
+The following classes allow customization of the GUI of the dashboard and is not affect the functionalities of the program
 '''		
 class HeaderRenderer(DefaultTableCellRenderer ):
 	def __init__(self ):
@@ -145,7 +224,7 @@ class ColorRenderer(DefaultTableCellRenderer ):
 class FreezeTableModel(DefaultTableModel):
 	def isCellEditable(self):
 		return False
-		
+
 class MyCustomTable():
 	def __init__(self, numDecimal):
 		self.table = None
@@ -209,6 +288,11 @@ class MyCustomTable():
 	def getTable(self):
 		return self.table
 
+''''
+This class creates a temporary copy of the original data that the user can use and make changes to. 
+This copied version is displayed onto the dashboard as the user performs screening/replacing values, 
+but it would not be save into the database until the users takes action. 
+'''
 class DataTableDisplay():
 	def __init__(self, fileName, stationName, paramName):
 		self.fileName = fileName
@@ -223,9 +307,9 @@ class DataTableDisplay():
 		self.orgTscm = self.mergingTscm()
 		self.modifiedTscm = self.orgTscm.copy()
 		self.numValues =  self.modifiedTscm.getData().numberValues
-		
 		self.rejectedBool = [False for _ in range(self.numValues)]
 
+	#These folowing 3 functions helps to display the number of missing values, replaced values and rejected values onto the dashboard
 	def getStringMissing(self):
 		return '%s/%s'%(len(self.missingIndex), self.modifiedTscm.getData().numberValues)
 	def getStringRejected(self):
@@ -233,6 +317,7 @@ class DataTableDisplay():
 	def getStringReplaced(self):
 		return '%s/%s'%(len(self.replaceIndex), self.modifiedTscm.getData().numberValues)
 
+	#This function removes empty pathname in file. MUST CALL after save.
 	def removeEmptyPath(self): #must call after saving
 		dssFile = HecDss.open(self.fileName)
 		pathnameList = dssFile.getPathnameList()
@@ -242,6 +327,8 @@ class DataTableDisplay():
 				dssFile.delete([path])
 				print('delete ', path)
 		dssFile.close()
+		
+	#This functions creates quality flags for new data
 	def makeQuality(self, org_quality):
 		if org_quality is None:
 			org_quality = [0 for _ in range(len(self.rejectedBool))]
@@ -254,6 +341,9 @@ class DataTableDisplay():
 				val = set_quality_bit(val,1)
 			new_quality.append(val)
 		return new_quality
+	
+	#As user choose to overwrite the original data with the temporary data, this function helps to save the new data into the original pathname 
+	# - Hence overwriting
 	def overwrite(self):
 		dssFile = HecDss.open(self.fileName)
 		modifiedTsc = self.modifiedTscm.getData().clone()
@@ -269,6 +359,7 @@ class DataTableDisplay():
 		paramName = getPathnameColumn(pathname,'a') + '/'+getPathnameColumn(pathname,'c')+'/' +  getPathnameColumn(pathname,'e') +'/' +  getPathnameColumn(pathname,'f') 
 		return stationName, paramName
 		
+	#This function saves the new data as a copy of the original data.
 	def saveCopy(self):
 		dssFile = HecDss.open(self.fileName)
 		toSaveTscm, _ = self.removeRejected()
@@ -287,18 +378,21 @@ class DataTableDisplay():
 		paramName = getPathnameColumn(pathname,'a') + '/'+getPathnameColumn(pathname,'c')+'/' +  getPathnameColumn(pathname,'e') +'/' +  getPathnameColumn(pathname,'f') 
 
 		return stationName, paramName
-		
+	
+	#This function checks the quality flag to see if the data value is missing
 	def isMissing(self, value):
 		value = int(value) >> (missingQualityIndex-1)
 		return value&1
-
+	
+	#This function checks the quality flag to see if the data value is rejected
 	def isRejected(self, value):
 		value = value >> (rejectedQualityIndex-1)
 		return value&1
-		
+	
 	def getMergedTscm(self):
 		return self.orgTscm
-
+	
+	#This function merges two TSC together, filled the empty range with null values.
 	def mergingTscm(self):
 		dssFile = HecDss.open(self.fileName)
 		allPathname = dssFile.getPathnameList()
@@ -324,6 +418,7 @@ class DataTableDisplay():
 		dssFile.close()
 		return mergedTscm
 		
+	#This function returns a list of index that need to be replaced
 	def fillReplaceIndex(self, replaceFlag, timeIdx=None):
 		print('fill replace ', replaceFlag, timeIdx)
 		replaceIndex = []
@@ -339,6 +434,7 @@ class DataTableDisplay():
 			return fillter_replaceIndex
 		return replaceIndex
 		
+	#This function finds the immediate previous valid value -> to find start point of interpolation
 	def findPrevValidValue(self, index):
 		while index >=0 and ( index in self.rejectedIndex or index in self.missingIndex):
 			index  -=1
@@ -347,6 +443,8 @@ class DataTableDisplay():
 		else: #found a valid value precede the index
 			value = self.modifiedTscm.getData().values[index]
 		return  value
+	
+	#This function finds the immediate next valid value -> to find end point of interpolation
 	def findNextValidValue(self, index):
 		while index<self.modifiedTscm.getData().numberValues and ( index in self.rejectedIndex or  index in self.missingIndex):
 			index +=1
@@ -356,6 +454,7 @@ class DataTableDisplay():
 			value = self.modifiedTscm.getData().values[index]		
 		return  value
 		
+	#This function replaces the data at replaced index with linear interpolation
 	def replaceLinearTscm(self,  replaceFlag,timeIdx ):
 		self.replaceIndex = self.fillReplaceIndex(replaceFlag,timeIdx)
 		newTsc = self.modifiedTscm.getData().clone()
@@ -383,6 +482,7 @@ class DataTableDisplay():
 		self.modifiedTscm.setData(newTsc)
 		return self.modifiedTscm, self.replaceIndex
 
+	#This function replaces the data at replaced index with custom value
 	def replaceCustomTscm(self,  replaceFlag, customValue, timeIdx):
 		self.replaceIndex = self.fillReplaceIndex(replaceFlag, timeIdx)
 		newTsc = self.modifiedTscm.getData().clone()
@@ -390,10 +490,14 @@ class DataTableDisplay():
 			newTsc.values[index] = customValue
 		self.modifiedTscm.setData(newTsc)
 		return self.modifiedTscm, self.replaceIndex
+	
+	#This function checks if the TSC has no valid value at all
 	def hasValidValue(self):
 		numberValues = self.modifiedTscm.getData().numberValues
 		number_rejectedIndex =  len(self.fillReplaceIndex('MR'))
 		return  numberValues != number_rejectedIndex
+	
+	#This function computes the average of VALID values - excludes invalid value
 	def averageValidValue(self):
 		newTsc = self.modifiedTscm.getData().clone()
 		sumValues = 0# sum(newTsc.values) 
@@ -407,6 +511,7 @@ class DataTableDisplay():
 			return None
 		return  sumValues/count
 		
+	#This function replaces values with the average of valid data
 	def replaceAverageTscm(self, replaceFlag,timeIdx):
 		self.replaceIndex =self.fillReplaceIndex(replaceFlag,timeIdx)
 		startIdx, endIdx = timeIdx
@@ -429,7 +534,7 @@ class DataTableDisplay():
 				total += tsc[i]
 				cnt +=1
 		return total/cnt
-
+	#This function removes the rejected value - replace with null value
 	def removeRejected(self, timeIdx=None,  customValue = missingNumericValue_CONST ): #based on replaceCustomValue
 		newTsc = self.modifiedTscm.getData().clone()
 		cnt = 0
@@ -445,6 +550,7 @@ class DataTableDisplay():
 		self.modifiedTscm.setData(newTsc)
 		return self.modifiedTscm, self.rejectedIndex
 		
+	#This function performs screening on the TSC with the selected method of screening and the ordinate
 	def screenTscm(self, minValue, maxValue, changeLimit, timeIdx, pointsSpan, typeChangeLimit = 'absDiff'):
 		#adding timeWindow
 		startIdx, endIdx = timeIdx
@@ -486,6 +592,7 @@ class DataTableDisplay():
 	def getMissingIndex(self):
 		return self.missingIndex
 
+	#This function fills the empty range with null value - use for merging TSC
 	def fillMergedTscm(self,  tscm, orgInterval, fillValue= -9999999.99): #mergeTscQuality
 		tsc = tscm.getData()
 		hectime = HecTime()
@@ -522,12 +629,17 @@ class DataTableDisplay():
 		tscm.setData(dummyTsc)
 		return tscm.getData()
 		
+	#This functions erases the changes to the data return to the original data
 	def resetDataTable(self):
 		self.rejectedIndex = []
 		self.replaceIndex = []
 		self.modifiedTscm = self.orgTscm.copy()
 		self.missingBool = [False for _ in range(self.numValues)]
 		self.rejectedBool = [False for _ in range(self.numValues)]
+
+'''
+This class handles the start and end coordinate that the user wishes to make changes to - default as the entire dataset.
+'''
 class TimeIdx():
 	def __init__(self, spinner):
 		self.timeIdx = [s.getValue()-1 for s in spinner]#change from Ordinate to Index
@@ -541,6 +653,9 @@ class TimeIdx():
 			return False
 		return True
 		
+'''
+This class generates the dashboard of the program: combining both the GUI classes and the DataTableDisplay temporary data.
+'''
 class MainFrame_revised():
 	def __init__(self, fileName, windowTime):
 		self.fileName = fileName
@@ -566,7 +681,8 @@ class MainFrame_revised():
 		
 		self.mainPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT,self.stationsTree, self.stationInfoPane)
 		self.mainFrame.add(self.mainPane)
-
+	
+	#This function generates the station JTree on the left of the Splitted Pane
 	def makeStationsTree(self):
 		root = DefaultMutableTreeNode('Stations')
 		for stationName in self.stationDict.keys():
@@ -577,6 +693,7 @@ class MainFrame_revised():
 		stationsTree = JTree(root, valueChanged = self.selectParamFromTree)
 		stationsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION)
 		return stationsTree
+	#This function updates the tree as new pathname is added to the tree. 
 	def updateTree(self, stationName, paramName, mode):
 		root = self.stationsTree.getModel().getRoot()
 		child_cnt = self.stationsTree.getModel().getChildCount(root)
@@ -593,13 +710,14 @@ class MainFrame_revised():
 		stationsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION)
 		return stationsTree
 
-		
+	#This function handles the event of user clicks on a pathname in the tree
 	def selectParamFromTree(self, event):
 		tree = event.getSource()
 		if tree.getSelectionCount() :
 			paramName = tree.getLastSelectedPathComponent() 
 		self.makeStationInfoPane(self.stationInfoPane, str(paramName.getParent()), str(paramName))
 		
+	#This function generatetes the station info tab for each pathname.
 	def makeStationInfoPane(self, parentTabbedPane, stationName, paramName):
 		if not self.stationDict[stationName][paramName]['display']:
 			self.stationDict[stationName][paramName]['display'] = True
@@ -624,6 +742,7 @@ class MainFrame_revised():
 		else:
 			messageDialog('Parameter is already displayed')
 			
+	#This functions handles the event of closing the station info pane - i.e: allowing shut down of the individual pathname tab and not the whole program
 	def closeTab(self, event):
 		selected = event.getSource().getParent()
 		index = self.stationInfoPane.indexOfTabComponent(selected)
@@ -633,6 +752,7 @@ class MainFrame_revised():
 		self.stationInfoPane.remove(index)
 		self.stationDict[stationName][paramName]['display'] = False
 		
+	#This functions generates the GUI for the replacing task
 	def addReplaceTab(self, parentTabbedPane, stationName, paramName):
 		replacePane = JPanel()
 
@@ -714,6 +834,7 @@ class MainFrame_revised():
 		scroll.setViewportView(replacePane)
 		parentTabbedPane.addTab('Replace', scroll)
 		
+	#This function collects user's input of replacing
 	def onReplaceMethod(self, event):
 
 		#Add scroll pane
@@ -751,6 +872,7 @@ class MainFrame_revised():
 		self.stationDict[stationName][paramName]['replaceMethodSelected'] = replace_method
 		print('replaceMethodselected save here ', stationName, paramName, replace_method)
 		
+	#This function handles the event of user's clicks on the compute button for replacing task
 	def onComputeReplace(self, event):
 
 		#Add scroll pane
@@ -792,7 +914,7 @@ class MainFrame_revised():
 			self.stationDict[stationName][paramName]['myTable'] = myTable
 		else: 
 			messageDialog('Replace Method or Replace Flag is empty')
-
+	#This function determines the number of decimal places for parameters
 	def getNumDecimal(self, paramName):
 		if 'COND' in paramName or 'TURBIDITY' in paramName:
 			numDecimal=0
@@ -801,7 +923,8 @@ class MainFrame_revised():
 		else:
 			numDecimal=2
 		return numDecimal
-		
+	
+	#This function generates the Table Pane to display data
 	def addTablePane(self, parentPane, stationName, paramName):
 		tablePane = JPanel()
 		tablePane.setLayout(BoxLayout(tablePane, BoxLayout.Y_AXIS))
@@ -857,13 +980,15 @@ class MainFrame_revised():
 		self.stationDict[stationName][paramName]['plotComboBox'] = plotComboBox 
 		self.stationDict[stationName][paramName]['myTable'] = myTable 
 		
+	#This funtion generates the GUI of the reporting data at the bottom of the dashboard.
 	def updateReportTextField(self, stationName, paramName):
 		missingTextField, rejectedTextField, replaceTextField = self.stationDict[stationName][paramName]['reportTextField']  
 		orgDataTable = self.stationDict[stationName][paramName]['orgDataTable'] 
 		missingTextField.setText(orgDataTable.getStringMissing())
 		rejectedTextField.setText(orgDataTable.getStringRejected())
 		replaceTextField.setText(orgDataTable.getStringReplaced())
-		
+	
+	#This function handles the event of user choose to reset the dataset - i.e clear to performed taskes.
 	def onReset(self,event):
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent() #plotButton->tableBottomPane->tablePane->stationTopPane->StationInfoPane
 		stationPane = event.getSource().getParent().getParent().getParent().getParent() 
@@ -886,6 +1011,7 @@ class MainFrame_revised():
 		self.updateReportTextField(stationName, paramName)
 		remove_Tscm = self.stationDict[stationName][paramName].pop("modifiledTscm", None)
 
+	#This function handles the event where the user clicks on Overwrite Button
 	def onOverwrite(self, event):
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent() #plotButton->tableBottomPane->tablePane->stationTopPane->StationInfoPane
 		stationPane = event.getSource().getParent().getParent().getParent().getParent() 
@@ -894,7 +1020,8 @@ class MainFrame_revised():
 		orgDataTable = self.stationDict[stationName][paramName]['orgDataTable']
 		orgDataTable.overwrite()
 		self.repaintPanel(stationName, paramName,'overwrite')
-		
+	
+	#This function handles the event where the user clicks on "Save as copy" Button
 	def onSaveCopy(self, event):
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent() #plotButton->tableBottomPane->tablePane->stationTopPane->StationInfoPane
 		stationPane = event.getSource().getParent().getParent().getParent().getParent() 
@@ -903,12 +1030,14 @@ class MainFrame_revised():
 		orgDataTable = self.stationDict[stationName][paramName]['orgDataTable']
 		stationName, paramName = orgDataTable.saveCopy()
 		self.repaintPanel(stationName, paramName,'copy')
-
+	
+	#This function repaints the station JTree as new pathname is added
 	def repaintPanel(self, stationName, paramName, mode):
 		self.stationDict = updateStationDict(self.fileName, self.stationDict, stationName, paramName)
 		self.stationsTree = self.updateTree(stationName, paramName,mode)
 		self.mainFrame.repaint()
 		
+	#This function handles the event where the user clicks on Plot Button
 	def onPlotParam(self, event): 
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent() #plotButton->tableBottomPane->tablePane->stationTopPane->StationInfoPane
 		stationPane = event.getSource().getParent().getParent().getParent().getParent() 
@@ -932,7 +1061,10 @@ class MainFrame_revised():
 		plot.setSize(600,600)
 		plot.setLocation(100,100)
 		plot.showPlot()
-	
+		
+	'''
+	This class helps defined the GUI of the spinner input - bold with grey background as it is back to the default value.
+	'''
 	class BoldListener(ChangeListener):
 		def __init__(self, spinner, defaultValue):
 			self.spinner = spinner
@@ -944,6 +1076,8 @@ class MainFrame_revised():
 				self.spinner.getEditor().getTextField().setBackground(defaultBackgroundSpinner_CONST)
 			else:
 				self.spinner.getEditor().getTextField().setBackground(Color.WHITE)
+	
+	#This functions collects the user's choice of Change Limit
 	def onTypeChangeLimit(self,event):
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent()  #ComputeButton->ScreenPane->stationPane->stationInfoPane
 		stationPane = event.getSource().getParent().getParent().getParent().getParent()
@@ -954,7 +1088,7 @@ class MainFrame_revised():
 		elif absDiffButton.isSelected():
 			self.stationDict[stationName][paramName]['typeChangeLimit'] = 'absDiff'
 		
-		
+	#This functions generates the GUI for the screening conditions
 	def addScreenConditions(self, screenTopPanel, c,  cond_label, defaultValue, row, displayUnits, endOrdinate_DEFAULT=None):
 		col_start = 2
 		c.gridx, c.gridy, c.ipady= col_start, row, 6
@@ -997,7 +1131,8 @@ class MainFrame_revised():
 			return spinner, checkbox, absDiffButton, percentageButton
 			
 		return spinner, checkbox
-		
+	
+	#This function generates the GUI for the screening tab sections
 	def addScreenTab(self, parentTabbedPane, stationName, paramName):
 		screenPane = JPanel()
 		screenPane.setLayout(BoxLayout(screenPane, BoxLayout.Y_AXIS))
@@ -1052,6 +1187,7 @@ class MainFrame_revised():
 		screenPane.add(computeScreenButton)
 		parentTabbedPane.addTab('Screen', screenPane)
 		
+	#This functions allows activate/ deactivate of the screening conditions.
 	def onoffScreenCondtions(self, checkbox, const, default,  spinner, mode):
 		if mode=='deactivate':
 			spinner.setValue(const)
@@ -1061,6 +1197,7 @@ class MainFrame_revised():
 			spinner.setValue(default)
 			spinner.getEditor().getTextField().setEditable(True)
 
+	#This functions handles the events of user checking the screening conditions box
 	def onCheckBoxConditions(self, event):
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent().getParent()  #ComputeButton->ScreenPane->stationPane->stationInfoPane
 		stationPane = event.getSource().getParent().getParent().getParent().getParent()
@@ -1100,10 +1237,12 @@ class MainFrame_revised():
 			self.onoffScreenCondtions(points_checkbox, pointsDefaultValue , pointsDefaultValue, points_spinner,  points_mode)
 			self.stationDict[stationName][paramName]['checkBoxStatus'][2] = not points_status
 
+	#This function helps to display the original data column in the data table
 	def displayOriginalColumn(self, myTable, column):
 		myTable.setColumnLabel(column, 'Original')
 		return myTable
 		
+	#This function helps to customize the display of a column in the data table
 	def displayColumn(self, myTable, columnName, column,  modifiedIndex, color):
 		myTable.setColumnLabel(column,columnName)
 		myTable.getTable().setEditable(False)
@@ -1112,7 +1251,8 @@ class MainFrame_revised():
 		return myTable
 	def getTypeChangeLimit(self, paramName, stationName):
 		return self.stationDict[stationName][paramName]['typeChangeLimit']
-		
+	
+	#This function handles the events of user clicking the Compute button for the screening task.
 	def onComputeScreen(self, event):
 		stationInfoPane = event.getSource().getParent().getParent().getParent().getParent()  #ComputeButton->ScreenPane->stationPane->stationInfoPane
 		stationPane = event.getSource().getParent().getParent().getParent()
@@ -1121,7 +1261,6 @@ class MainFrame_revised():
 
 		self.stationDict[stationName][paramName]['computeScreenButton' ].setEnabled(False)
 
-		#get timeWindow
 		timeIdx_obj = TimeIdx(self.stationDict[stationName][paramName]['timeWindowScreenSpinner'])
 		timeIdx = timeIdx_obj.getTimeIdx()
 		
@@ -1141,10 +1280,12 @@ class MainFrame_revised():
 		self.stationDict[stationName][paramName]['myTable'] = myTable
 		self.updateReportTextField(stationName, paramName)
 		
+	#This function gets the spinner values for user input
 	def getScreenSpinnerValue(self, stationName, paramName):
 		min_spinner, max_spinner, change_spinner, points_spinner = self.stationDict[stationName][paramName]['screenSpinnerComponent']
 		return min_spinner.getValue(), max_spinner.getValue(), change_spinner.getValue(), points_spinner.getValue()
 
+	#This function gets the spinner values (ordinate only) for user input
 	def getTimeWindowSpinnerValue(self, stationName, paramName, mode): #mode is 'replace' or 'screen'
 		if mode=='replace':
 			whichspinner = 'timeWindowReplaceSpinner'
@@ -1153,88 +1294,31 @@ class MainFrame_revised():
 		start_spinner, end_spinner = self.stationDict[stationName][paramName][whichspinner]
 		return start_spinner.getValue(), end_spinner.getValue()
 		
-
+	# LET'S RUN THE PROGRAM
 	def run(self):
 		self.mainFrame.setVisible(1)
 
 '''
 HELPER FUNCTIONS
 '''
-def hasTimeWindow(windowTime):
-	return windowTime[0].toString() != ''
-def getPathnameColumn(pathname, column):
-	if column =='c': #switch here a to c, c to a
-		return DSSPathname(pathname).aPart()
-	elif column =='b':
-		return DSSPathname(pathname).bPart()
-	elif column =='a': #switch here a to c, c to a
-		return DSSPathname(pathname).cPart()
-	elif column =='d':
-		return DSSPathname(pathname).dPart()
-	elif column =='e':
-		return DSSPathname(pathname).ePart()
-	else:
-		return DSSPathname(pathname).fPart()
-def getStationDict(fileName):
-	dssFile = HecDss.open(fileName)
-	stationName = set()
-	for pathname in dssFile.getPathnameList():
-		if 'DISCRETE' not in pathname and 'IR-' not in pathname:
-			stationName.add(getPathnameColumn(pathname,'b'))
-	stationDict = {}
-	for sname in stationName:
-		print('making station dict',sname)
-		paramsName = getAllParamNameByStation(fileName, sname)
-		stationDict[sname] = {}
-		stationDict[sname]['paramNameList'] = paramsName
-		
-		for pname in paramsName:
-			print('making station dict param',pname)
-			stationDict[sname][pname] = {}
-			stationDict[sname][pname]['display'] = False
-			dataTable = DataTableDisplay(fileName, sname, pname)
-			stationDict[sname][pname]['orgDataTable'] = dataTable 
-			stationDict[sname][pname]['numValues'] = dataTable.numValues
-			stationDict[sname][pname]['missingIndex'] = dataTable.getMissingIndex()
-	dssFile.close()
-	print('done making station dict')
-	return stationDict
-def updateStationDict(fileName,  stationDict, sname, pname):
-	stationDict[sname][pname] = {}
-	stationDict[sname][pname]['display'] = False
-	dataTable = DataTableDisplay(fileName, sname, pname)
-	stationDict[sname][pname]['orgDataTable'] = dataTable 
-	stationDict[sname][pname]['numValues'] = dataTable.numValues
-	stationDict[sname][pname]['missingIndex'] = dataTable.getMissingIndex()
-	return stationDict
-	
-def getAllParamNameByStation(fileName, stationName):
-	dssFile = HecDss.open(fileName)
-	paramName = set()
-	for pathname in dssFile.getPathnameList():
-		if getPathnameColumn(pathname,'b') == stationName and 'DISCRETE' not in pathname and 'IR-' not in pathname:
-			newParam = getPathnameColumn(pathname,'a') + '/'+getPathnameColumn(pathname,'c')+'/' +  getPathnameColumn(pathname,'e') +'/' +  getPathnameColumn(pathname,'f') 
-			paramName.add(newParam)
-	dssFile.close()
-	return paramName
 
 '''
 MAIN FUNCTION
 '''
 def main():
 	if not ListSelection.isInteractive():
-	    print("The script must be run inside HEC-DSSVue")
+	    print("The script must be run inside HEC-DSSVue") #error
 	else: 
-		mainWindow = ListSelection.getMainWindow()
-		windowTime =[mainWindow.getStartTime(), mainWindow.getEndTime()]
+		mainWindow = ListSelection.getMainWindow() #get the currenlty open .dss file
+		windowTime =[mainWindow.getStartTime(), mainWindow.getEndTime()] #get the time window if specified
 		if not hasTimeWindow(windowTime):
 			print("No time window selected")
 
-		dssFilename = mainWindow.getDSSFilename()
+		dssFilename = mainWindow.getDSSFilename() #open .dss file
 		if dssFilename is None:
 			messageDialog('No opened data file')
-		mainFrame = MainFrame_revised(dssFilename, windowTime)
-		mainFrame.run()
+		mainFrame = MainFrame_revised(dssFilename, windowTime) #initialize the dashboard
+		mainFrame.run() #run the dashboard.
 
 
 if __name__=='__main__':
