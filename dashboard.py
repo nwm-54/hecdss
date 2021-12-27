@@ -1,3 +1,9 @@
+'''
+This file contains all code needed to run the dashboard inside HECDSS-Vue. 
+To run the dashboard, in HECDSS-Vue, go to Tools -> Script Editor, then copy/paste this file into the Editor.  Then click Save and Test to run the script
+'''
+
+
 # name=dashboard_paramC_update_Aug27
 # description=copy from dashboard_param_A_timestamps
 # description=change in getPathnameColumn function ~line 1265-ish
